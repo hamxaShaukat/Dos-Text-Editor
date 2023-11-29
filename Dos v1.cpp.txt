@@ -1,0 +1,794 @@
+#include <iostream>
+#include <map>
+#include <string>
+#include <fstream>
+#include <algorithm>
+#include <Windows.h>
+#include <cctype>
+#include <list>
+#include<queue>
+using namespace std;
+
+class DOS
+{
+private:
+
+	struct file
+	{
+		string name;
+		string ext;
+		int size;
+		bool hidden = false;
+	};
+
+	struct dir
+	{
+		string name;
+		string path;
+		map<string, file*>files;
+		map<string, dir*>dirs;
+		dir* parent;
+	};
+
+	dir* currentDir;
+	map<string, dir*>directories;
+	queue<string> regularQueue;
+	priority_queue<string> priorityPrintQueue;
+
+public:
+
+	DOS()
+	{
+		currentDir = new dir();
+		currentDir->name = "root";
+		currentDir->path = "V:\\";
+		currentDir->parent = nullptr;
+		directories["root"] = currentDir;
+	}
+
+	void Operate(string com)
+	{
+		for (char& str : com)
+		{
+			str = tolower(str);
+		}
+		if (com == "attrib")
+			ATTRIB();
+		else if (com == "cd")
+			CD();
+		else if (com == "cd.")
+			CD_DOT();
+		else if (com == "cd..")
+			CD_DOTDOT();
+		else if (com == "cd/")
+			CD_BACKSLASH();
+		else if (com == "mkdir")
+			MKDIR();
+		else if (com == "rmdir")
+			RMDIR();
+		else if (com == "dir")
+			DIR();
+		else if (com == "create")
+			CREATE();
+		else if (com == "del")
+			DEL();
+		else if (com == "copy")
+			COPY();
+		else if (com == "findf")
+			FINDf();
+		else if (com == "findd")
+			FINDd();
+		else if (com == "findstr1")
+			FINDstr();
+		else if (com == "findstr")
+			FINDSTR();
+		else if (com == "move")
+			MOVE();
+		else if (com == "format")
+			FORMAT();
+		else if (com == "help")
+			HELP();
+		else if (com == "del")
+			DEL();
+		else if (com == "edit")
+			EDIT();
+		else if (com == "ver")
+			VER();
+		else if (com == "cls")
+			CLS();
+		else if (com == "tree")
+			TREE();
+		else if (com == "save")
+			SAVE();
+		else if (com == "rename")
+			RENAME();
+		else if (com == "pwd")
+			PWD();
+		else if (com == "convert")
+			CONVERT();
+		else if (com == "exit")
+			exit(0);
+		else
+			cout << "Invalid command.\n";
+	}
+
+	void run()
+	{
+		string com;
+		while (true)
+		{
+			cout << currentDir->path << "> ";
+			cin >> com;
+			Operate(com);
+		}
+	}
+
+	void ATTRIB()
+	{
+		string fileName;
+		cout << "Enter the file name to display attributes: ";
+		cin >> fileName;
+
+		if (this->currentDir->files.find(fileName) != this->currentDir->files.end()) {
+			file* currentFile = this->currentDir->files[fileName];
+			cout << "Attributes for file " << fileName << ":\n";
+			cout << "Name: " << currentFile->name << "\n";
+			cout << "Extension: " << currentFile->ext << "\n";
+			cout << "Size: " << currentFile->size << " bytes\n";
+			if (currentFile->hidden)
+				cout << "Hidden File\n";
+			else
+				cout << "Not Hidden File\n";
+		}
+		else
+		{
+			cout << "File not found.\n";
+		}
+	}
+
+	void CD()
+	{
+		string dname;
+		cin >> dname;
+		if (this->currentDir->dirs.find(dname) != this->currentDir->dirs.end())
+		{
+			this->currentDir = this->currentDir->dirs[dname];
+		}
+		else
+		{
+			cout << "Directory not found.\n";
+		}
+	}
+
+	void CD_DOT()
+	{
+		cout << currentDir->path << endl;
+	}
+
+	void CD_DOTDOT()
+	{
+		if (currentDir->parent != nullptr)
+		{
+			currentDir = currentDir->parent;
+		}
+		else
+		{
+			cout << "Already at the root directory.\n";
+		}
+	}
+
+	void CD_BACKSLASH()
+	{
+		// Change directory to the root directory
+		currentDir = directories["root"];
+	}
+
+	void MKDIR()
+	{
+		string dname;
+		cout << "Enter the name of directory: ";
+		cin >> dname;
+		if (this->currentDir->dirs.find(dname) == this->currentDir->dirs.end())
+		{
+			dir* newDir = new dir();
+			newDir->name = dname;
+			newDir->path = this->currentDir->path + dname + "\\";
+			newDir->parent = this->currentDir;
+			this->currentDir->dirs[dname] = newDir;
+			directories[dname] = newDir;
+		}
+		else
+		{
+			cout << "Directory already exists.\n";
+		}
+	}
+
+	void RMDIR()
+	{
+		string dname;
+		cout << "Enter the name of the directory to remove: \n";
+		cin >> dname;
+
+		if (currentDir->dirs.find(dname) != currentDir->dirs.end())
+		{
+			delete this->currentDir->dirs[dname];
+			this->currentDir->dirs.erase(dname);
+			cout << "Directory " << dname << " removed successfully.\n";
+		}
+
+		else
+		{
+			cout << "Directory not found.\n";
+		}
+
+	}
+
+	void DIR()
+	{
+		//dipsplay all the dirs and filesin current dir
+		for (auto& x : this->currentDir->dirs)
+		{
+			cout << x.first << "\n";
+		}
+		for (auto& x : this->currentDir->files)
+		{
+			cout << x.first << "\n";
+		}
+	}
+
+	void CREATE()
+	{
+		//make new file
+		string fname;
+		cout << "Enter the name of file. \n";
+		cin >> fname;
+		if (this->currentDir->files.find(fname) == this->currentDir->files.end())
+		{
+			file* newFile = new file();
+			newFile->name = fname;
+			this->currentDir->files[fname] = newFile;
+			ofstream newFil(fname);
+		}
+		else
+		{
+			cout << "File already exists.\n";
+		}
+	}
+
+	void DEL()
+	{
+		// del file
+		string fname;
+		cin >> fname;
+		if (this->currentDir->files.find(fname) != this->currentDir->files.end())
+		{
+			delete this->currentDir->files[fname];
+			this->currentDir->files.erase(fname);
+		}
+		else
+		{
+			cout << "File not found.\n";
+		}
+	}
+
+	void EDIT()
+	{
+		string fileName;
+		cout << "Enter the file name to edit: ";
+		cin >> fileName;
+
+		ofstream clearFile("dos_commands.txt", ios::trunc);
+		clearFile.close();
+
+		ofstream commandFile("dos_commands.txt", ios::app);
+		if (commandFile.is_open()) 
+		{
+			commandFile << "edit " << fileName << endl;
+			commandFile.close();
+		}
+	}
+
+	void MOVE()
+	{
+		string fname, dname;
+		cin >> fname >> dname;
+		if (directories.find(fname) == directories.end())
+		{
+			cout << "Dirctory to be moved not found!\n";
+			return;
+		}
+		for (auto& x : directories)
+		{
+			if (x.second->files.find(fname) != x.second->files.end())
+			{
+				directories[dname]->files[fname] = x.second->files[fname];
+				x.second->files.erase(fname);
+				cout << "File " << fname << " moved to directory " << dname << "\n";
+				return;
+			}
+		}
+		cout << "File not found.\n";
+	}
+
+
+	void CONVERT()
+	{
+		string oldName, newName;
+		cout << "Enter the current name of the directory or file: ";
+		cin >> oldName;
+
+		if (currentDir->dirs.find(oldName) != currentDir->dirs.end() || currentDir->files.find(oldName) != currentDir->files.end())
+		{
+			cout << "Enter the new name: ";
+			cin >> newName;
+
+
+			if (currentDir->dirs.find(newName) == currentDir->dirs.end() && currentDir->files.find(newName) == currentDir->files.end())
+			{
+
+				if (currentDir->dirs.find(oldName) != currentDir->dirs.end())
+				{
+					dir* targetDir = currentDir->dirs[oldName];
+					targetDir->name = newName;
+					targetDir->path = currentDir->path + newName + "\\";
+					currentDir->dirs[newName] = targetDir;
+					currentDir->dirs.erase(oldName);
+					cout << "Directory renamed successfully.\n";
+				}
+				// Rename file
+				else if (currentDir->files.find(oldName) != currentDir->files.end())
+				{
+					file* targetFile = currentDir->files[oldName];
+					targetFile->name = newName;
+					currentDir->files[newName] = targetFile;
+					currentDir->files.erase(oldName);
+					cout << "File renamed successfully.\n";
+				}
+			}
+			else
+			{
+				cout << "Error: The new name already exists in the current directory.\n";
+			}
+		}
+		else
+		{
+			cout << "Error: Directory or file not found.\n";
+		}
+	}
+
+	void COPY()
+	{
+		string sourceFile, destinationDir;
+		cout << "Enter the source file name: ";
+		cin >> sourceFile;
+		cout << "Enter the destination directory: ";
+		cin >> destinationDir;
+
+		if (this->currentDir->files.find(sourceFile) != this->currentDir->files.end())
+		{
+			file* source = this->currentDir->files[sourceFile];
+
+			dir* destDir;
+			if (directories.find(destinationDir) != directories.end())
+			{
+				destDir = directories[destinationDir];
+			}
+			else
+			{
+				cout << "Destination directory not found.\n";
+				return;
+			}
+
+			// Copy the file to the destination directory
+			file* copyFile = new file(*source);
+			destDir->files[sourceFile] = copyFile;
+		}
+		else
+		{
+			cout << "Source file not found.\n";
+		}
+	}
+
+	void FINDf()
+	{
+		string fileName;
+		cout << "Enter the file name to find: ";
+		cin >> fileName;
+
+		if (this->currentDir->files.find(fileName) != this->currentDir->files.end())
+		{
+			cout << "File found in " << this->currentDir->path << ".\n";
+		}
+		else
+		{
+			cout << "File not found.\n";
+		}
+	}
+
+	void FINDd()
+	{
+		string dname;
+		cout << "Enter name of the dir to find: ";
+		cin >> dname;
+		for (auto& x : directories)
+		{
+			if (x.second->dirs.find(dname) != x.second->dirs.end())
+			{
+				cout << "Dir " << dname << " founded." << "\n";
+				return;
+			}
+		}
+		cout << "Dir not found.\n";
+	}
+
+	void FINDstr()
+	{
+		string searchString;
+		cout << "Enter the string to find: ";
+		cin >> searchString;
+
+		if (this->currentDir->files.find("currentFile") != this->currentDir->files.end())
+		{
+			file* currentFile = this->currentDir->files["currentFile"];
+
+			if (currentFile)
+			{
+				size_t found = currentFile->name.find(searchString);
+				if (found != string::npos)
+				{
+					cout << "String found in the currently open file.\n";
+				}
+				else
+				{
+					cout << "String not found in the currently open file.\n";
+				}
+			}
+		}
+		else
+		{
+			cout << "No file currently open.\n";
+		}
+	}
+
+	void FINDSTR()
+	{
+		string searchString;
+		cout << "Enter the string to find: ";
+		cin >> searchString;
+
+		for (auto& x : this->currentDir->files)
+		{
+			file* currentFile = x.second;
+			if (currentFile)
+			{
+				ifstream fileStream(currentFile->name);
+
+				if (fileStream.is_open())
+				{
+					string line;
+					while (getline(fileStream, line))
+					{
+						if (line.find(searchString) != string::npos)
+						{
+							cout << "String found in file: " << currentFile->name << "\n";
+							break;
+						}
+					}
+
+					fileStream.close();
+				}
+				else
+				{
+					cout << "Unable to open file: " << currentFile->name << "\n";
+				}
+			}
+		}
+	}
+
+	void FORMAT()
+	{
+		for (auto& x : directories)
+		{
+			for (auto& y : x.second->files)
+			{
+				delete y.second;
+			}
+
+			x.second->files.clear();
+			x.second->dirs.clear();
+
+			if (x.first != "root")
+			{
+				delete x.second;
+			}
+		}
+		directories.clear();
+		directories["root"] = currentDir;
+	}
+
+	void PWD()
+	{
+		// Print the current working directory
+		cout << "Current directory: " << currentDir->path << endl;
+	}
+
+	void RENAME()
+	{
+		string oldName, newName;
+		cout << "Enter the current name of the directory or file: ";
+		cin >> oldName;
+
+		if (currentDir->dirs.find(oldName) != currentDir->dirs.end() || currentDir->files.find(oldName) != currentDir->files.end())
+		{
+			cout << "Enter the new name: ";
+			cin >> newName;
+
+			if (currentDir->dirs.find(newName) == currentDir->dirs.end() && currentDir->files.find(newName) == currentDir->files.end())
+			{
+				if (currentDir->dirs.find(oldName) != currentDir->dirs.end())
+				{
+					dir* targetDir = currentDir->dirs[oldName];
+					targetDir->name = newName;
+					targetDir->path = currentDir->path + newName + "\\";
+					currentDir->dirs[newName] = targetDir;
+					currentDir->dirs.erase(oldName);
+					cout << "Directory renamed successfully.\n";
+				}
+				else if (currentDir->files.find(oldName) != currentDir->files.end())
+				{
+					file* targetFile = currentDir->files[oldName];
+					targetFile->name = newName;
+					currentDir->files[newName] = targetFile;
+					currentDir->files.erase(oldName);
+					cout << "File renamed successfully.\n";
+				}
+			}
+			else
+			{
+				cout << "Error: The new name already exists in the current directory.\n";
+			}
+		}
+		else
+		{
+			cout << "Error: Directory or file not found.\n";
+		}
+	}
+
+	void CLS()
+	{
+		system("cls");
+	}
+
+	void HELP()
+	{
+		cout << "List of available commands:\n";
+		cout << "CD      - Change current directory\n";
+		cout << "CD.     - Print working directory\n";
+		cout << "CD..    - Move to the parent directory\n";
+		cout << "CD/     - Move to the root directory\n";
+		cout << "MKDIR   - Create a new directory\n";
+		cout << "DIR     - List directories and files in the current directory\n";
+		cout << "CREATE  - Create a new file\n";
+		cout << "DEL     - Delete a file\n";
+		cout << "FINDd   - Find a dir in the directory tree\n";
+		cout << "MOVE    - Move a file to another directory\n";
+		cout << "COPY    - Copy a file to another directory\n";
+		cout << "FINDf   - Find a specific file in the current directory\n";
+		cout << "FINDstr - Find a string in the currently open file\n";
+		cout << "FINDSTR - Find a string in all files in the current directory\n";
+		cout << "ATTRIB  - Display attributes of a file\n";
+		cout << "CLS     - Clear the console screen\n";
+		cout << "FORMAT  - Clear the directory tree and reset to the initial state\n";
+		cout << "HELP    - Display help information\n";
+		cout << "LOADTREE- Load a tree from a file named tree.txt\n";
+		cout << "VER     - To check the version of your Disk Operating System.\n";
+		cout << "DEL     - Del the given file.\n";
+		cout << "Edit    - Edit the given file.\n";
+
+		cout << "EXIT    - Exit the DOS simulator\n";
+	}
+
+
+	void loadDirectoryStructure(dir* current, ifstream& inputFile)
+	{
+		string line;
+		while (getline(inputFile, line))
+		{
+
+			if (line.substr(0, 2) == "+ ")
+			{
+				string dirName = line.substr(2);
+				dir* newDir = new dir();
+				newDir->name = dirName;
+				newDir->path = current->path + dirName + "\\";
+				newDir->parent = current;
+				current->dirs[dirName] = newDir;
+				loadDirectoryStructure(newDir, inputFile);
+			}
+			else if (line.substr(0, 2) == "- ")
+			{
+				string fileName = line.substr(2);
+				file* newFile = new file();
+				newFile->name = fileName;
+				current->files[fileName] = newFile;
+			}
+		}
+	}
+
+	void LOAD()
+	{
+		ifstream inputFile("Saving_tree_file.txt");
+		if (inputFile.is_open())
+		{
+			FORMAT(); 
+
+			string line;
+			getline(inputFile, line); 
+			loadDirectoryStructure(currentDir, inputFile);
+
+			inputFile.close();
+			cout << "Directory tree loaded successfully.\n";
+		}
+		else
+		{
+			cout << "Unable to open the file for loading.\n";
+		}
+	}
+
+
+	void PPRINT() 
+	{
+		cout << "Priority Print Queue:\n";
+		while (!priorityPrintQueue.empty()) 
+		{
+			cout << priorityPrintQueue.top() << endl;
+			priorityPrintQueue.pop();
+		}
+	}
+
+	void PROMPT()
+	{
+		string newPrompt;
+		cout << "Enter the new prompt: ";
+		cin >> newPrompt;
+
+		currentDir->path = newPrompt;
+	}
+
+	void PRINT()
+	{
+		string fileName;
+		cout << "Enter the name of the text file to add to the print queue: ";
+		cin >> fileName;
+
+		if (this->currentDir->files.find(fileName) != this->currentDir->files.end())
+		{
+			
+		}
+		else
+		{
+			cout << "File not found.\n";
+		}
+	}
+
+	void PQUEUE() {
+		string fileName = "file_for_pqueue.txt";
+		ofstream pQueueFile(fileName, ios::trunc);
+
+		if (pQueueFile.is_open()) 
+		{
+			string fileToAdd;
+			cout << "Enter the name of the text file to add to the priority print queue: ";
+			cin >> fileToAdd;
+
+			if (this->currentDir->files.find(fileToAdd) != this->currentDir->files.end()) {
+				priorityPrintQueue.push(fileToAdd);
+				pQueueFile << fileToAdd << "\n";
+				cout << "File added to priority print queue and saved to file.\n";
+			}
+			else 
+			{
+				cout << "File not found.\n";
+			}
+			pQueueFile.close();
+		}
+		else {
+			cout << "Unable to open the file for priority print queue.\n";
+		}
+	}
+
+	void QUEUE() 
+	{
+		string fileName = "file_for_queue.txt";
+		ofstream queueFile(fileName, ios::trunc);
+
+		if (queueFile.is_open()) 
+		{
+			string fileToAdd;
+			cout << "Enter the name of the text file to add to the print queue: ";
+			cin >> fileToAdd;
+
+			if (this->currentDir->files.find(fileToAdd) != this->currentDir->files.end()) 
+			{
+				regularQueue.push(fileToAdd);
+				queueFile << fileToAdd << "\n";
+				cout << "File added to the print queue and saved to file.\n";
+			}
+			else 
+			{
+				cout << "File not found.\n";
+			}
+			queueFile.close();
+		}
+		else 
+		{
+			cout << "Unable to open the file for the regular queue.\n";
+		}
+	}
+
+	
+		
+	void saveDirectoryStructure(dir* current, ofstream& outputFile, int depth = 0)
+	{
+		for (auto& x : current->dirs)
+		{
+			outputFile << string(depth * 4, '-') << "+ " << x.first << "\\" << endl;
+			saveDirectoryStructure(x.second, outputFile, depth + 1);
+		}
+		for (auto& x : current->files)
+		{
+			outputFile << string(depth * 4, '-') << "- " << x.first << endl;
+		}
+	}
+
+	void SAVE()
+	{
+		ofstream outputFile("Saving_tree_file.txt", ios::trunc);
+		if (outputFile.is_open())
+		{
+			outputFile << "Directory Tree:\n";
+			saveDirectoryStructure(currentDir, outputFile);
+			outputFile.close();
+			cout << "Directory tree saved successfully.\n";
+		}
+		else
+		{
+			cout << "Unable to open the file for saving.\n";
+		}
+	}
+
+	void printDirectoryStructure(dir* current, int depth = 0)
+	{
+		for (auto& x : current->dirs)
+		{
+			cout << string(depth * 4, ' ') << "|--" << x.first << "\\" << endl;
+			printDirectoryStructure(x.second, depth + 1);
+		}
+		for (auto& x : current->files)
+		{
+			cout << string(depth * 4, ' ') << "|--" << x.first << endl;
+		}
+	}
+
+	void TREE()
+	{
+		cout << "Directory Tree:\n";
+		printDirectoryStructure(currentDir);
+	}
+
+	void VER()
+	{
+		cout << "Version of the program: 2.0" << endl;
+	}
+
+};
+
+int main()
+{
+	cout << "Microsoft Windows[Version 10.0.19045.3570]\n ";
+	cout << "(c)Microsoft Corporation.All rights reserved.\n";
+	cout << "DSA\n";
+	DOS dos;
+	dos.run();
+	return 0;
+}
